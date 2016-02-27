@@ -1,0 +1,48 @@
+A concrete implementation for the domain object should be provided. Domain objects can be concrete classes,
+such as Transaction, Account, Customer as EntityObjects. While ValueObjects should incorporate
+things which never change, such as Monetary...ValueObjects should expose as much as they could pure functions.
+Domain Objects represent the CORE of the domain, they identify the objects which define the business.
+Domain Objects should NOT be exposed to other layers of application, and should NOT be boilerplated with
+third-party dependencies such as framework-related dependencies.
+
+For the clients(rest layer, persistence-layer) to communicate with the domain objects should all adhere
+by implementing abstractions, that stand as anticorruption objects in front of domain-objects.
+
+These abstractions(that can be named anticoruption entities) come into life in the form of abstract-classes,
+that implement the Template-Method design pattern. As the Template-Method Pattern reveals, the invocations
+to domain-objects should all be encapsulated in the "final" locked algorithms. These abstract-classes expose
+abstract-method that the communicating layers/clients(rest, persistence) should implement, providing the
+custom logic: how the objects are marshalled, converters and so on.
+This way, the domain-objects module, can be considered as a black-box for the client, and can be reused in
+other contexts, as long as the "part-that-varies" (how the client interacts with it) are implemented by the
+client.
+
+example::
+core-domain module::
+class AccountDomainObject {
+    // exposing domain-specific computations
+}
+
+core-domain module::
+abstract class AbstractAccountInteraction {
+    final void computation() {
+        // invocation of domain objects
+        // invocation of client-dependant specific implementation...
+        // abstract-computations();
+    }
+
+    abstract computations();
+}
+
+client:: rest/persistence modules:: should implemnt this AbstractAccountInteraction
+and define its own interaction: Handshake, Kiss :)
+class HandshakeAccountIntearction extends AbstractAccountInteraction {
+    // client should implement the abstract computations ONLY! part that vary! the rest is encapsulated and cannot be changed!
+    // Note that the client can break the contract! in which case faults are triggered!!!
+    // It is the responsibility of the client to KNOW and MANIPULATe THE PARTS that change!
+}
+
+client:: rest/persistence modules::
+in EventHandler -> that are subscribed under the LymaEventBus:: by eventTypes and channels
+these concrete implementations are called!(HandshakeAccountIntearction...)
+Each Handler should take the responsibility of converting the data-structures in the type the consumer wants.

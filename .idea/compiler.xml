@@ -22,18 +22,44 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="lyma-core-domain" />
-        <module name="lyma-core-persistence" />
         <module name="lyma-core-rest" />
+      </profile>
+      <profile default="false" name="Annotation profile for lyma-core-ws" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
         <module name="lyma-core-ws" />
+      </profile>
+      <profile default="false" name="Annotation profile for lyma-core-domain" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="lyma-core-domain" />
+      </profile>
+      <profile default="false" name="Annotation profile for lyma-core-async-bus" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="lyma-core-async-bus" />
+      </profile>
+      <profile default="false" name="Annotation profile for lyma-core-persistence" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="lyma-core-persistence" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="lyma-core-domain" target="1.5" />
-      <module name="lyma-core-persistence" target="1.5" />
+      <module name="lyma-core-async-bus" target="1.8" />
+      <module name="lyma-core-domain" target="1.8" />
+      <module name="lyma-core-persistence" target="1.8" />
       <module name="lyma-core-rest" target="1.5" />
-      <module name="lyma-core-services" target="1.5" />
-      <module name="lyma-core-ws" target="1.5" />
+      <module name="lyma-core-services" target="1.8" />
+      <module name="lyma-core-ws" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

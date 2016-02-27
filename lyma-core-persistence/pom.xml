@@ -8,32 +8,46 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>lyma-core-persistence</artifactId>
+    <artifactId>lyma-core-repository</artifactId>
+
+    <properties>
+        <jpa.version></jpa.version>
+        <hibernate.jpa.version>1.0.1.Final</hibernate.jpa.version>
+        <hibernate.entity.manager.version>5.1.0.Final</hibernate.entity.manager.version>
+        <hibernate.core.version>5.1.0.Final</hibernate.core.version>
+        <hibernate.validator.version>5.2.4.Final</hibernate.validator.version>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>javax.persistence</groupId>
+                <artifactId>persistence-api</artifactId>
+                <version></version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.hibernate.javax.persistence</groupId>
                 <artifactId>hibernate-jpa-2.0-api</artifactId>
-                <version>1.0.1.Final</version>
+                <version>${hibernate.jpa.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-entitymanager</artifactId>
-                <version>5.1.0.Final</version>
+                <version>${hibernate.entity.manager.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>5.1.0.Final</version>
+                <version>${hibernate.core.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>5.2.4.Final</version>
+                <version>${hibernate.validator.version}</version>
             </dependency>
 
         </dependencies>
