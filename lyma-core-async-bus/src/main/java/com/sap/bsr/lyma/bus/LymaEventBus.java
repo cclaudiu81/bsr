@@ -1,51 +1,48 @@
 package com.sap.bsr.lyma.bus;
 
-import com.google.common.base.Preconditions;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
-import com.sap.bsr.lyma.bus.com.sap.bsr.lyma.bus.event.LymaEvent;
+import com.sap.bsr.lyma.bus.com.sap.bsr.lyma.bus.event.AbstractBidirectionalDataEvent;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 /**
- * Wrapper Object over default EventBus that encapsulates and expose the EventBus communication
- * through Channels, such that in there may be many EventBus-es dependending on the subscribed channels
- *
+ * Singleton Wrapper over core EventBus that exposed a unique instance of EventBus
+ * and allows for chaining-invocations.
+ * It wraps the async-event-bus version, allowing for non-blocking operations through the
+ * use of cached-thread-pool framework;
+ * <p>
  * Created by cclaudiu on 2/27/16.
  */
 public final class LymaEventBus {
 
     private static final Executor EXECUTOR_CACHED_THREADS_POOL = Executors.newCachedThreadPool();
-    private static final ConcurrentHashMap<Channel, EventBus> EVENT_BUS_CACHE = new ConcurrentHashMap();
 
-    public enum Channel {
-        REQUEST,
-        RESPONSE,
-        DEFAULT
+    /* singleton across JVM runtime:: delegate responsibility of single instance creation to JVM/class-loader */
+    private static final LymaEventBus LYMA_EVENT_BUS_INSTANCE = new LymaEventBus();
+    private final EventBus asyncEventBus;
+
+    private LymaEventBus() {
+        this.asyncEventBus = new AsyncEventBus(EXECUTOR_CACHED_THREADS_POOL);
     }
 
-    private static final void register(final Object eventHandler, Channel channel) {
-        Preconditions.checkNotNull(channel, "Missing a valid channel for registering the Event Handler on!");
-
-        EventBus asyncEventBus = EVENT_BUS_CACHE.get(channel);
-        if(asyncEventBus == null) {
-            asyncEventBus = new AsyncEventBus(channel.name(), EXECUTOR_CACHED_THREADS_POOL);
-            EVENT_BUS_CACHE.put(channel, asyncEventBus);
-        }
-
-        asyncEventBus.register(eventHandler);
+    public static final LymaEventBus instance() {
+        return LYMA_EVENT_BUS_INSTANCE;
     }
 
-    public static final <T, V> void broadcast(final LymaEvent<T, V> lymaEvent, final Object eventHandler) {
-        broadcast(lymaEvent, Channel.DEFAULT, eventHandler);
+    public final LymaEventBus subscribe(final Object handler) {
+        asyncEventBus.register(handler);
+        return instance();
     }
 
-    public static final <T, V> void broadcast(final LymaEvent<T, V> lymaEvent, Channel channel, final Object eventHandler) {
-        register(eventHandler, channel);
-        final EventBus asyncEventBus = EVENT_BUS_CACHE.get(channel);
+    public final LymaEventBus unsubscribe(final Object handler) {
+        asyncEventBus.unregister(handler);
+        return instance();
+    }
 
-        asyncEventBus.post(lymaEvent);
+    public final <T> LymaEventBus postEvent(final AbstractBidirectionalDataEvent<T> bidirectionalEvent) {
+        asyncEventBus.post(bidirectionalEvent);
+        return instance();
     }
 }
