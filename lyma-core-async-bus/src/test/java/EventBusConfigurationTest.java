@@ -86,6 +86,32 @@ public class EventBusConfigurationTest {
         assertThat(calculationEventResponse.get(), is("CALCULATION_RESPONSE_PAYLOAD"));
     }
 
+    @Test
+    public void subscribing_2_handlers_for_same_event_should_trigger_actions_for_both_handlers() {
+        final MultiCalculationEvent multiCalculationEvent = new MultiCalculationEvent("PAYLOAD_MULTICALCULATION");
+        asyncEventBus.subscribe(new MultiCalculationHandler())
+                .postEvent(multiCalculationEvent);
+    }
+
+    static class MultiCalculationHandler {
+        @Subscribe
+        @AllowConcurrentEvents
+        public void firstHandler(MultiCalculationEvent multiCalculationEvent) {
+            System.out.println("first-handler:: " + multiCalculationEvent.eventPayload);
+        }
+
+        @Subscribe
+        @AllowConcurrentEvents
+        public void secondHandler(MultiCalculationEvent multiCalculationEvent) {
+            System.out.println("second-handler:: " + multiCalculationEvent.eventPayload);
+        }
+    }
+
+    static class MultiCalculationEvent extends AbstractBidirectionalDataEvent<String> {
+        public String eventPayload;
+        MultiCalculationEvent(String payload) { this.eventPayload = payload; }
+    }
+
 
     /* Demo Handler that mirror the real implementation definitions */
     static class ContextCalculationHandler {
