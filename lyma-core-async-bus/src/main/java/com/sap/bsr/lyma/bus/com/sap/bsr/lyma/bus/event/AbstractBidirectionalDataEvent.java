@@ -31,6 +31,24 @@ public abstract class AbstractBidirectionalDataEvent<T> {
     private final CountDownLatch countDownLatch = new CountDownLatch(COMPUTATION_THREAD);
     private T response;
 
+    public enum ResponseCode {
+        OK(200),
+        CREATED(201),
+        ACCEPTED(202),
+        BAD_REQUEST(400),
+        UNAUTHORIZED(401),
+        NOT_FOUND(404),
+        INTERNAL_SERVER_ERROR(500);
+
+        private final int httpResponseCode;
+        private ResponseCode(final int httpResponseCode) {
+            this.httpResponseCode = httpResponseCode;
+        }
+        public int code() {
+            return this.httpResponseCode;
+        }
+    }
+
     public Optional<T> getResponse(long millis) {
         try {
             countDownLatch.await(millis, TimeUnit.MILLISECONDS);
@@ -44,6 +62,8 @@ public abstract class AbstractBidirectionalDataEvent<T> {
 
     public void setResponse(T responsePayload) {
         this.response = responsePayload;
+
         countDownLatch.countDown();
     }
+
 }

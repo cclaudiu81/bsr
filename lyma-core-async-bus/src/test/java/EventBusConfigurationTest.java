@@ -4,9 +4,14 @@ import com.google.common.eventbus.DeadEvent;
 import com.google.common.eventbus.Subscribe;
 import com.sap.bsr.lyma.bus.LymaEventBus;
 import com.sap.bsr.lyma.bus.com.sap.bsr.lyma.bus.event.AbstractBidirectionalDataEvent;
+import com.sap.bsr.lyma.bus.com.sap.bsr.lyma.bus.event.ResponsePayload;
+import com.sap.bsr.lyma.bus.executor.impl.AbstractRequestExecutor;
+import com.sap.bsr.lyma.bus.executor.impl.ErrorHandlerExecutor;
 import org.junit.Test;
 
+import static com.sap.bsr.lyma.bus.com.sap.bsr.lyma.bus.event.AbstractBidirectionalDataEvent.ResponseCode.INTERNAL_SERVER_ERROR;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -66,7 +71,7 @@ public class EventBusConfigurationTest {
         final CalculationExceedsTimeoutEvent exceedsTimeoutEvent = new CalculationExceedsTimeoutEvent("CALCULATE_CONTEXT_REQ");
 
         asyncEventBus.subscribe(new LongCalculationHandler())
-                     .postEvent(exceedsTimeoutEvent);
+                .postEvent(exceedsTimeoutEvent);
 
         final Optional<String> calculationEventResponse = exceedsTimeoutEvent.getResponse(awatingTimeoutLessThanComputationTimeout);
 
@@ -79,7 +84,7 @@ public class EventBusConfigurationTest {
         final ContextCalculationEvent calculationEvent = new ContextCalculationEvent("CALCULATE_CONTEXT_REQ");
 
         asyncEventBus.subscribe(new ContextCalculationHandler())
-                     .postEvent(calculationEvent);
+                .postEvent(calculationEvent);
 
         final Optional<String> calculationEventResponse = calculationEvent.getResponse(awaitingTimeout);
 
@@ -93,6 +98,32 @@ public class EventBusConfigurationTest {
                 .postEvent(multiCalculationEvent);
     }
 
+    @Test
+    public void any_exception_thrown_should_be_handled_through_the_error_decorator_and_http_status_code_should_be_returned_instead() {
+        final ErrorCalculationEvent calculationEvent = new ErrorCalculationEvent("THREW ERRROR");
+        asyncEventBus.subscribe(new ErrorCalculationHandler())
+                     .postEvent(calculationEvent);
+
+        final Optional<ResponsePayload<String>> response = calculationEvent.getResponse(400L);
+
+        assertThat(response.get().responseErrorCode(), is(INTERNAL_SERVER_ERROR.code()));
+        assertNull(response.get().responsePayload());
+    }
+
+    @Test
+    public void response_status_OK_should_be_returned_for_successfull_operation() {
+        final SuccessfulCalculationEvent successfullEvent = new SuccessfulCalculationEvent("SUCCESS OPERATION");
+        asyncEventBus.subscribe(new SuccessfullCalculationHandler())
+                .postEvent(successfullEvent);
+
+        final Optional<ResponsePayload<String>> successfullResponse = successfullEvent.getResponse(200L);
+
+        assertThat(successfullResponse.get().responsePayload(), is ("PAYLOAD_SUCCESS"));
+        assertThat(successfullResponse.get().responseErrorCode(), is (AbstractBidirectionalDataEvent.ResponseCode.OK.code()));
+    }
+
+
+    /* Setup:: */
     static class MultiCalculationHandler {
         @Subscribe
         @AllowConcurrentEvents
@@ -109,7 +140,10 @@ public class EventBusConfigurationTest {
 
     static class MultiCalculationEvent extends AbstractBidirectionalDataEvent<String> {
         public String eventPayload;
-        MultiCalculationEvent(String payload) { this.eventPayload = payload; }
+
+        MultiCalculationEvent(String payload) {
+            this.eventPayload = payload;
+        }
     }
 
 
@@ -136,21 +170,19 @@ public class EventBusConfigurationTest {
         @Subscribe
         @AllowConcurrentEvents
         public void onCalculationExceeds(final CalculationExceedsTimeoutEvent calculationEvent) throws InterruptedException {
-            Thread.sleep(1000l);
+            Thread.sleep(1000L);
             calculationEvent.setResponse("EXPIRES:: LONG_CALCULATION_RESPONSE_PAYLOAD");
         }
 
         @Subscribe
         @AllowConcurrentEvents
         public void onCalculationExceeds(final AwaitCalculationEvent awaitCalculationEvent) throws InterruptedException {
-            Thread.sleep(1000l);
+            Thread.sleep(1000L);
             awaitCalculationEvent.setResponse("AWAIT:: LONG_CALCULATION_RESPONSE_PAYLOAD");
         }
 
     }
 
-
-    /* Demo Events that mirror the real implementation definition */
     static class ContextCalculationEvent extends AbstractBidirectionalDataEvent<String> {
         final String requestEventContext;
 
@@ -172,6 +204,61 @@ public class EventBusConfigurationTest {
 
         public AwaitCalculationEvent(final String requestEventContext) {
             this.requestEventContext = requestEventContext;
+        }
+    }
+
+
+    /* Error mechanism for returning response-payloads + http-status-codes */
+    static class ErrorCalculationEvent extends AbstractBidirectionalDataEvent<ResponsePayload<String>> {
+        final String requestPayload;
+
+        ErrorCalculationEvent(String requestPayload) {
+            this.requestPayload = requestPayload;
+        }
+    }
+
+    static class ErrorCalculationHandler {
+        @Subscribe
+        @AllowConcurrentEvents
+        public void onCalculationError(final ErrorCalculationEvent errorCalculationEvent) {
+            new ErrorHandlerExecutor(
+                    new AbstractRequestExecutor<ResponsePayload<String>>(errorCalculationEvent) {
+                        @Override public void execute() {
+                            //getExecutedEvent().setResponse(domainLogic.getDimensions());
+                            throw new IllegalStateException("Error occured during a heavy computation");
+                        }
+                    }).execute();
+        }
+    }
+
+    /* happy-day scenarios */
+    static class SuccessfulCalculationEvent extends AbstractBidirectionalDataEvent<ResponsePayload<String>> {
+        final String requestPayload;
+
+        SuccessfulCalculationEvent(String requestPayload) {
+            this.requestPayload = requestPayload;
+        }
+    }
+
+    static class SuccessfullCalculationHandler {
+        @Subscribe
+        @AllowConcurrentEvents
+        public void onSuccessfullCalculation(final SuccessfulCalculationEvent successfullCalculationEvent) {
+            new ErrorHandlerExecutor<ResponsePayload<String>>(
+                    new AbstractRequestExecutor<ResponsePayload<String>>(successfullCalculationEvent) {
+                        @Override
+                        public void execute() {
+                            successfullCalculationEvent.setResponse(new ResponsePayload<String>() {
+                                @Override public int responseErrorCode() {
+                                    return AbstractBidirectionalDataEvent.ResponseCode.OK.code();
+                                }
+
+                                @Override public String responsePayload() {
+                                    return "PAYLOAD_SUCCESS";
+                                }
+                            });
+                        }
+                    }).execute();
         }
     }
 }
