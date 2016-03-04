@@ -31,6 +31,7 @@ public abstract class AbstractBidirectionalDataEvent<T> {
     private final CountDownLatch countDownLatch = new CountDownLatch(COMPUTATION_THREAD);
     private T response;
 
+    // TODO:: refactor this into it's own constant class
     public enum ResponseCode {
         OK(200),
         CREATED(201),

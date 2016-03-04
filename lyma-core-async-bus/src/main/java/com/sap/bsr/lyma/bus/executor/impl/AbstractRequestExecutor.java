@@ -1,6 +1,7 @@
 package com.sap.bsr.lyma.bus.executor.impl;
 
 import com.sap.bsr.lyma.bus.com.sap.bsr.lyma.bus.event.AbstractBidirectionalDataEvent;
+import com.sap.bsr.lyma.bus.com.sap.bsr.lyma.bus.event.ResponsePayload;
 import com.sap.bsr.lyma.bus.executor.RequestExecutor;
 
 import java.util.concurrent.ExecutorService;
@@ -12,19 +13,19 @@ import java.util.concurrent.Future;
  */
 public abstract class AbstractRequestExecutor<RESP> implements RequestExecutor<RESP> {
 
-    private final AbstractBidirectionalDataEvent<RESP> requestEvent;
+    private final AbstractBidirectionalDataEvent<ResponsePayload<RESP>> requestEvent;
 
-    public AbstractRequestExecutor(AbstractBidirectionalDataEvent<RESP> requestEvent) {
+    public AbstractRequestExecutor(AbstractBidirectionalDataEvent<ResponsePayload<RESP>> requestEvent) {
         this.requestEvent = requestEvent;
     }
 
     @Override
-    public AbstractBidirectionalDataEvent<RESP> getExecutedEvent() {
+    public AbstractBidirectionalDataEvent<ResponsePayload<RESP>> getExecutedEvent() {
         return requestEvent;
     }
 
     /** every client should provide the task to execute */
-    public abstract void execute();
+    public abstract ResponsePayload<RESP> execute();
 
     /** convenient operation for doing heavy computation that don't return a response */
     @SuppressWarnings("unused")

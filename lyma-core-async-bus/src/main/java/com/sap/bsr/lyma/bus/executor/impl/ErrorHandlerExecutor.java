@@ -15,9 +15,12 @@ public class ErrorHandlerExecutor<RESP> implements RequestExecutor<RESP> {
     }
 
     @Override
-    public void execute() {
+    public ResponsePayload<RESP> execute() {
         try {
-            configuredRequestExecutor.execute();
+
+            final ResponsePayload response = configuredRequestExecutor.execute();
+            configuredRequestExecutor.getExecutedEvent().setResponse(response);
+
         } catch(Exception generalException) {
 
             // set the response accordingly! an exception visitor might be implemented so that we set the error-code accordingly
@@ -32,10 +35,13 @@ public class ErrorHandlerExecutor<RESP> implements RequestExecutor<RESP> {
                 }
             });
         }
+
+        /* response coming from ErrorHandlerExecutor is discarded anyway */
+        return null;
     }
 
     @Override
-    public AbstractBidirectionalDataEvent<RESP> getExecutedEvent() {
+    public AbstractBidirectionalDataEvent<ResponsePayload<RESP>> getExecutedEvent() {
         return null;
     }
 }

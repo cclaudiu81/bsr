@@ -104,7 +104,7 @@ public class EventBusConfigurationTest {
         asyncEventBus.subscribe(new ErrorCalculationHandler())
                      .postEvent(calculationEvent);
 
-        final Optional<ResponsePayload<String>> response = calculationEvent.getResponse(400L);
+        final Optional<ResponsePayload<String>> response = calculationEvent.getResponse(1000L);
 
         assertThat(response.get().responseErrorCode(), is(INTERNAL_SERVER_ERROR.code()));
         assertNull(response.get().responsePayload());
@@ -222,10 +222,10 @@ public class EventBusConfigurationTest {
         @AllowConcurrentEvents
         public void onCalculationError(final ErrorCalculationEvent errorCalculationEvent) {
             new ErrorHandlerExecutor(
-                    new AbstractRequestExecutor<ResponsePayload<String>>(errorCalculationEvent) {
-                        @Override public void execute() {
-                            //getExecutedEvent().setResponse(domainLogic.getDimensions());
-                            throw new IllegalStateException("Error occured during a heavy computation");
+                    new AbstractRequestExecutor<String>(errorCalculationEvent) {
+                        @Override
+                        public ResponsePayload<String> execute() {
+                            throw new IllegalStateException("ERROR THROWN BY A HEAVY COMPUTATION!");
                         }
                     }).execute();
         }
@@ -244,11 +244,11 @@ public class EventBusConfigurationTest {
         @Subscribe
         @AllowConcurrentEvents
         public void onSuccessfullCalculation(final SuccessfulCalculationEvent successfullCalculationEvent) {
-            new ErrorHandlerExecutor<ResponsePayload<String>>(
-                    new AbstractRequestExecutor<ResponsePayload<String>>(successfullCalculationEvent) {
+            new ErrorHandlerExecutor<String>(
+                    new AbstractRequestExecutor<String>(successfullCalculationEvent) {
                         @Override
-                        public void execute() {
-                            successfullCalculationEvent.setResponse(new ResponsePayload<String>() {
+                        public ResponsePayload<String> execute() {
+                            return new ResponsePayload<String>() {
                                 @Override public int responseErrorCode() {
                                     return AbstractBidirectionalDataEvent.ResponseCode.OK.code();
                                 }
@@ -256,7 +256,7 @@ public class EventBusConfigurationTest {
                                 @Override public String responsePayload() {
                                     return "PAYLOAD_SUCCESS";
                                 }
-                            });
+                            };
                         }
                     }).execute();
         }
